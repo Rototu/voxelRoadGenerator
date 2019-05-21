@@ -1,0 +1,3 @@
+Requirement: node.js v8.9.1
+to run: node 3dGeom.js
+Will generate 100 json maps of size 200 in folder 'out'
