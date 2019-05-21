@@ -2,14 +2,16 @@ voxelRoadGenerator
 ==================
 A procedural road generator using voxels
 
-How to run:
+Browser usage:
 -----
-Run `node 3dGeom.js` using an ES6 compatible version of Node.js  
+Use *3dGeomBrowser.js*.
+Two functions are exported:  
+1. `MapGen.getMap(roadLength)` returning a procedurally generated road as a `shapeArray[verticesArray[xyzArray[]]]`
+2. `MapGen.generateJSONMap(roadLength)` returning data above in JSON format 
 
 
-Usage
+Node usage
 -----
-To modify number of maps generated, change arguments of the function called in the last line of the *3DGeom.js*:  
-```javascript
-generateJSONMaps(nrOfMapsToGenerate, roadLength);
-``` 
+Use *3dGeomNode.js*  
+Same functions as above are exported, plus  
+`MapGen.writeJSONMapsToFiles(noOfMaps, roadLength)` which generates a set amount of random maps of given length
