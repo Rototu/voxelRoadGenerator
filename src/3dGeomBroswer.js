@@ -115,7 +115,7 @@ const MapGen = (function () {
         y,
         z
       } = pos;
-      
+
       const size = this.size;
 
       if (x < 0 || y < 0 || z < 0 || x >= size || y >= size || z >= size) {
@@ -153,7 +153,11 @@ const MapGen = (function () {
 
       // return voxel value only if boolExpr is true
       const conditionVoxel = (boolExpr, px, py, pz) => {
-        return boolExpr ? marker : this.get(new Pos3D(px, py, pz));
+        try {
+          return boolExpr ? marker : this.get(new Pos3D(px, py, pz));
+        } catch (err) {
+          return marker;
+        }
         // IF expr false return out of bounds marker
       };
 
@@ -265,7 +269,7 @@ const MapGen = (function () {
           p2,
           p3
         };
-        
+
       } else {
         console.log(p1, p2, p3);
         throw new Error("Wrong arguments for creating triangle");
@@ -548,16 +552,30 @@ const MapGen = (function () {
       const neighbourVoxels = voxels.getSucc(currPos, currentDirection);
 
       // check for conclicts and add to available directions if neigbhour is ok
-      if (neighbourVoxels.forward === null && neighbourVoxels.downward === null && neighbourVoxels.under === null)
-        availableDirections.push(new Direction(1, 0));
-      if (neighbourVoxels.left === null && neighbourVoxels.underL === null && prevShape === 'square')
+      const fwd = neighbourVoxels.forward === null;
+      const dwd = neighbourVoxels.downward === null;
+      const und = neighbourVoxels.under === null;
+      const abv = neighbourVoxels.above === null;
+      const left = neighbourVoxels.left === null;
+      const right = neighbourVoxels.right === null;
+      const udL = neighbourVoxels.underL === null;
+      const udR = neighbourVoxels.underR === null;
+      const upw = neighbourVoxels.upward === null;
+
+      if (left && udL && und && prevShape === 'square') // turn left
         availableDirections.push(new Direction(8, 0));
-      if (neighbourVoxels.right === null && neighbourVoxels.underR === null && prevShape === 'square')
+      if (right && udR && und && prevShape === 'square') // turn right
         availableDirections.push(new Direction(2, 0));
-      if (neighbourVoxels.upward === null && neighbourVoxels.above === null && neighbourVoxels.forward === null)
-        availableDirections.push(new Direction(1, 1));
-      if (neighbourVoxels.downward === null && neighbourVoxels.under === null && neighbourVoxels.forward === null)
-        availableDirections.push(new Direction(1, -1));
+      if (upw && fwd && abv) // climb
+        availableDirections.push(new Direction(1, 1)); 
+      if (dwd && und && fwd) // go downhill
+        availableDirections.push(new Direction(1, -1)); 
+      if (fwd && dwd && und) { // go directly forward (increased chance)
+        availableDirections.push(new Direction(1, 0));
+        availableDirections.push(new Direction(1, 0));
+        availableDirections.push(new Direction(1, 0));
+        availableDirections.push(new Direction(1, 0));
+      }
 
       // choose a random direction from avaiable ones (if stuck break generation, 
       // this will be propagated upward and the map will be regenerated from scratch)
