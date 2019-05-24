@@ -562,15 +562,15 @@ const MapGen = (function () {
       const udR = neighbourVoxels.underR === null;
       const upw = neighbourVoxels.upward === null;
 
-      if (left && udL && und && prevShape === 'square') // turn left
+      if (left && right && udL && und && prevShape === 'square') // turn left
         availableDirections.push(new Direction(8, 0));
-      if (right && udR && und && prevShape === 'square') // turn right
+      if (right && left && udR && und && prevShape === 'square') // turn right
         availableDirections.push(new Direction(2, 0));
-      if (upw && fwd && abv) // climb
+      if (left && right && upw && fwd && abv) // climb
         availableDirections.push(new Direction(1, 1)); 
-      if (dwd && und && fwd) // go downhill
+      if (left && right && dwd && und && fwd) // go downhill
         availableDirections.push(new Direction(1, -1)); 
-      if (fwd && dwd && und) { // go directly forward (increased chance)
+      if (left && right && fwd && dwd && und) { // go directly forward (increased chance)
         availableDirections.push(new Direction(1, 0));
         availableDirections.push(new Direction(1, 0));
         availableDirections.push(new Direction(1, 0));

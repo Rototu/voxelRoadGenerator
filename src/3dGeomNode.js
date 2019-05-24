@@ -115,7 +115,7 @@ const MapGen = (function () {
         y,
         z
       } = pos;
-      
+
       const size = this.size;
 
       if (x < 0 || y < 0 || z < 0 || x >= size || y >= size || z >= size) {
@@ -269,7 +269,7 @@ const MapGen = (function () {
           p2,
           p3
         };
-        
+
       } else {
         console.log(p1, p2, p3);
         throw new Error("Wrong arguments for creating triangle");
@@ -562,15 +562,15 @@ const MapGen = (function () {
       const udR = neighbourVoxels.underR === null;
       const upw = neighbourVoxels.upward === null;
 
-      if (left && udL && und && prevShape === 'square') // turn left
+      if (left && right && udL && und && prevShape === 'square') // turn left
         availableDirections.push(new Direction(8, 0));
-      if (right && udR && und && prevShape === 'square') // turn right
+      if (right && left && udR && und && prevShape === 'square') // turn right
         availableDirections.push(new Direction(2, 0));
-      if (upw && fwd && abv) // climb
-        availableDirections.push(new Direction(1, 1)); 
-      if (dwd && und && fwd) // go downhill
-        availableDirections.push(new Direction(1, -1)); 
-      if (fwd && dwd && und) { // go directly forward (increased chance)
+      if (left && right && upw && fwd && abv) // climb
+        availableDirections.push(new Direction(1, 1));
+      if (left && right && dwd && und && fwd) // go downhill
+        availableDirections.push(new Direction(1, -1));
+      if (left && right && fwd && dwd && und) { // go directly forward (increased chance)
         availableDirections.push(new Direction(1, 0));
         availableDirections.push(new Direction(1, 0));
         availableDirections.push(new Direction(1, 0));

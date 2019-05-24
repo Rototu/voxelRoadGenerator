@@ -2,6 +2,11 @@ voxelRoadGenerator
 ==================
 A procedural road generator using voxels
 
+Demo
+----
+Go to https://rototu.github.io/voxelRoadGenerator/.  
+(ES6 compatible browser needed)
+
 Browser usage:
 -----
 Use *3dGeomBrowser.js*.  
