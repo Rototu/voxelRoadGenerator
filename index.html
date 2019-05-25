@@ -6,36 +6,38 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <title>Procedural voxel map generator</title>
-    <style>
-        * {
-            margin: 0;
-            box-sizing: border-box;
-            position: relative;
-        }
-
-        body {
-            background-color: rgb(20, 0, 50);
-            display: grid;
-            justify-items: center;
-            grid-row-gap: 1em;
-            grid-template-rows: 1fr 4fr;
-            align-items: center;
-        }
-
-        #instructions {
-            display: block; 
-        }
-
-        /* canvas {
-            position: relative;
-            width: 100%;
-            height: 100%
-        } */
-
-    </style>
+    <link rel="stylesheet" href="style.css">
+    <link rel="prefetch" href="/img/bg.jpg">
+    <link rel="prefetch" href="/img/instr.png">
+    <link rel="prefetch" href="/img/sky.jpg">
 </head>
 
 <body id="demo">
+    <div id="prompt">
+        <div id="title">Procedural voxel map generator demo</div>
+        <div id="form">
+            <div class="form-el">
+                Choose map size and linearity values.
+            </div>
+            <div class="form-el">
+                <input autocomplete="off" type="range" min="1" max="500" value="250" class="slider" id="mapSize">
+                <div>Map Size: <span id="sizeOutput"></span></div>
+            </div>
+            <div class="form-el">
+                <input autocomplete="off" type="range" min="1" max="99" value="5" class="slider" id="mapLinearity">
+                <div>Linearity: <span id="linearityOutput"></span></div>
+            </div>
+            <div class="form-el">
+                    <input autocomplete="off" type="range" min="0" max="99" value="10" class="slider" id="altitudeVariation">
+                    <div>Altitude Variation: <span id="altitudeOutput"></span></div>
+                </div>
+            <div class="form-el">
+                <div id="submit" onclick="init()">
+                    Render Map
+                </div>
+            </div>
+        </div>
+    </div>
     <img src="img/instr.png" id="instructions" />
     <script src="utils/three.min.js"></script>
     <script src="src/3dGeomBroswer.js"></script>

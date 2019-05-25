@@ -513,107 +513,167 @@ const MapGen = (function () {
     }
   }
 
-  // The maximum is exclusive and the minimum is inclusive
-  function getRandomInt(min, max) {
-    return Math.floor(Math.random() * (max - min)) + min;
-  }
+  class RoadGen {
 
-  // generate a map with a road of given size (length = no of shapes)
-  function generateMap(size) {
+    // optimized backtracking generation
+    static optMapGen(size, linearity, altitudeVar) {
 
-    const maxRoadCount = size;
-    const map = new Map(size);
-    const voxels = map.voxels;
-    const middlePos = Math.floor(size / 2);
-    const currentVoxelMarker = "self";
-    const startPos = new Pos3D(middlePos, middlePos, 0);
-    const roads = [];
+      // ------
 
-    let roadCount = 0;
-    let currentVoxel = new VoxelPoint(startPos);
-    let nextVoxel = null;
-    let prevShape = 'square';
-    let currentDirection = 1;
-    let nextDirection;
+      // 'GLOBAL' vars for backtracking alg
 
-    // while the road is not long enough
-    while (roadCount < maxRoadCount) {
+      // generate empty map
+      const roadMap = new Map(size);
+      const roadVoxels = roadMap.voxels;
 
-      // initialize an empty array of available directions
-      const availableDirections = [];
+      // start generation in the middle of the face with z = 0
+      const middlePos = Math.floor(size / 2);
+      const startPos = new Pos3D(middlePos, middlePos, 0);
 
-      // get current position
-      const currPos = currentVoxel.pos;
+      // create empty road array
+      const roads = [];
 
-      // mark current voxel in array
-      voxels.set(currPos, currentVoxelMarker);
+      // marker for occupied voxel (used to see voxel as not-empty when generating options)
+      const voxelMarker = "marked";
 
-      // get neighbouring voxels of current voxel, maintaining orientation of the previous road piece
-      const neighbourVoxels = voxels.getSucc(currPos, currentDirection);
+      // ------
 
-      // check for conclicts and add to available directions if neigbhour is ok
-      const fwd = neighbourVoxels.forward === null;
-      const dwd = neighbourVoxels.downward === null;
-      const und = neighbourVoxels.under === null;
-      const abv = neighbourVoxels.above === null;
-      const left = neighbourVoxels.left === null;
-      const right = neighbourVoxels.right === null;
-      const udL = neighbourVoxels.underL === null;
-      const udR = neighbourVoxels.underR === null;
-      const upw = neighbourVoxels.upward === null;
 
-      if (left && right && udL && und && prevShape === 'square') // turn left
-        availableDirections.push(new Direction(8, 0));
-      if (right && left && udR && und && prevShape === 'square') // turn right
-        availableDirections.push(new Direction(2, 0));
-      if (left && right && upw && fwd && abv) // climb
-        availableDirections.push(new Direction(1, 1));
-      if (left && right && dwd && und && fwd) // go downhill
-        availableDirections.push(new Direction(1, -1));
-      if (left && right && fwd && dwd && und) { // go directly forward (increased chance)
-        availableDirections.push(new Direction(1, 0));
-        availableDirections.push(new Direction(1, 0));
-        availableDirections.push(new Direction(1, 0));
-        availableDirections.push(new Direction(1, 0));
+      // initial variables for backtracking alg
+      let currentVoxel = new VoxelPoint(startPos);
+      let prevShape = 'none';
+      let currentDirection = 1;
+
+      // backtracking alg
+      function backtrackingSearch(roads, voxel, direction, prevShape) {
+
+        // goal reached
+        if (roads.length == size) {
+          return roads;
+        }
+
+        // prepare to generate options to choose from
+
+        // get current position
+        const currPos = voxel.pos;
+
+        // mark current voxel in array  -- GLOBAL CHANGE
+        roadVoxels.set(currPos, voxelMarker);
+
+        // mark voxels above and under as unavailable --GLOBAL CHANGE
+        const abovePos = currPos.decrease('y');
+        const underPos = currPos.increase('y');
+        roadVoxels.set(abovePos, voxelMarker);
+        roadVoxels.set(underPos, voxelMarker);
+
+        // get neighbouring voxels of current voxel, maintaining orientation of the previous road piece
+        const neighbourVoxels = roadVoxels.getSucc(currPos, direction);
+
+        // generate options
+        const opts = RoadGen.computeOptions(neighbourVoxels, prevShape, linearity, altitudeVar);
+
+        // if options avaiable, try them out
+        if (opts.length > 0) {
+
+          // shuffle options for randomness
+          const shuffledOpts = RoadGen.shuffleArray(opts);
+
+          for (let opt of shuffledOpts) {
+
+            // generate road piece
+            const roadSeg = new Road(voxel, opt, direction);
+
+            // add change to global voxel map -- GLOBAL CHANGE
+            roadVoxels.set(currPos, roadSeg);
+
+            // add road to arr
+            roads.push(roadSeg);
+
+            const {
+              currentVoxel: newVoxel,
+              shape: newShape,
+              currentDirection: newDirection
+            } = RoadGen.computeStepConsequences(opt, direction, currPos);
+
+            // check if option leads to solution
+            const answer = backtrackingSearch(roads, newVoxel, newDirection, newShape);
+
+            if (answer !== false) {
+
+              // if solution found, return it
+              return answer;
+
+            } else {
+
+              // else remove added road
+              roads.pop();
+
+            }
+
+          }
+        }
+
+        // undo global changes
+        roadVoxels.set(currPos, null);
+        roadVoxels.set(abovePos, null);
+        roadVoxels.set(underPos, null);
+
+        // no solution found in this branch of searching
+        return false;
+
       }
 
-      // choose a random direction from avaiable ones (if stuck break generation, 
-      // this will be propagated upward and the map will be regenerated from scratch)
-      let optionCount = availableDirections.length;
-      if (optionCount < 1) {
-        break;
+      return backtrackingSearch(roads, currentVoxel, currentDirection, prevShape);
+
+    }
+
+    // shuffle array (Durstenfeld shuffle algorithm)
+    static shuffleArray(arr) {
+      const array = arr.slice();
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
       }
-      let randOption = availableDirections[getRandomInt(0, optionCount)];
+      return array;
+    }
 
-      // generate and store road segment
-      let roadSeg = new Road(currentVoxel, randOption, currentDirection);
-      voxels.set(currPos, roadSeg);
-      roads.push(roadSeg);
+    // The maximum is exclusive and the minimum is inclusive
+    static getRandomInt(min, max) {
+      return Math.floor(Math.random() * (max - min)) + min;
+    }
 
-      // get straight orientation = non-diagonal (front, left, right, back)
+    // compute consequences of step, getting details for the next generation step
+    static computeStepConsequences(opt, prevDirection, currPos) {
+
       const {
         climb,
         orientation
-      } = randOption;
-      let straightOrientation; // from diagonal orientations to ortogonal orientations
+      } = opt;
+
+      let shape;
+
+      // get ortogonal orientation
+      let straightOrientation, prevShape;
       switch (orientation) {
         case 1:
-          prevShape = 'square';
+          shape = 'square';
           straightOrientation = 1;
           break;
         case 2:
-          prevShape = 'triangle';
+          shape = 'triangle';
           straightOrientation = 3;
           break;
         case 8:
-          prevShape = 'triangle';
+          shape = 'triangle';
           straightOrientation = 7;
           break;
       }
-      currentDirection = currentDirection - 1 + straightOrientation;
+
+      // computing new absolute direction
+      let currentDirection = prevDirection - 1 + straightOrientation;
       if (currentDirection >= 9) currentDirection -= 8;
 
-      // clone obj as direct assignment would be just copying the reference
+      // clone obj as instance of Pos3D class
       let newPos = cloneObj(currPos);
 
       // move to next voxel
@@ -641,18 +701,53 @@ const MapGen = (function () {
         default:
           break;
       }
-      currentVoxel = new VoxelPoint(newPos);
 
-      roadCount += 1;
+      // generate next voxel for backtracking
+      const currentVoxel = new VoxelPoint(newPos);
+
+      // return computed values
+      return {
+        currentVoxel,
+        shape,
+        currentDirection
+      };
 
     }
 
-    // return an empty road if algorithm got stuck
-    if (roads.length < size) return [];
+    // Compute available road options for generation step
+    static computeOptions(neighbours, prevShape, linearity, altitudeVar) {
 
-    // otherwise return completely generated road
-    return roads;
+      let opts = [];
+
+      // check for conclicts and add to available directions if neigbhour is ok
+      const fwd = neighbours.forward === null;
+      const dwd = neighbours.downward === null;
+      const und = neighbours.under === null;
+      const abv = neighbours.above === null;
+      const left = neighbours.left === null;
+      const right = neighbours.right === null;
+      const udL = neighbours.underL === null;
+      const udR = neighbours.underR === null;
+      const upw = neighbours.upward === null;
+
+      if (left && right && udL && und && prevShape === 'square') // go left
+        opts.push(new Direction(8, 0));
+      if (right && left && udR && und && prevShape === 'square') // go right
+        opts.push(new Direction(2, 0));
+      if (left && right && upw && fwd && abv) // go uphill
+        opts = opts.concat(Array(altitudeVar).fill(new Direction(1, 1)));
+      if (left && right && dwd && und && fwd) // go downhill
+        opts = opts.concat(Array(altitudeVar).fill(new Direction(1, -1)));
+      if (left && right && fwd && dwd && und) // go forward with increased chance
+        opts = opts.concat(Array(linearity).fill(new Direction(1, 0)));
+
+      return opts;
+
+    }
+
   }
+
+  // ------------------------
 
   // get road pieces out of voxels
   function mapToArray(roads) {
@@ -680,27 +775,27 @@ const MapGen = (function () {
   }
 
   // generate complete map of given size (repeat generation until not stuck)
-  function getMap(size) {
-    let map = simplifyShapeArray(mapToArray(generateMap(size)));
-    while (map.length === 0) {
-      map = simplifyShapeArray(mapToArray(generateMap(size)));
-    }
+  function getMap(size, linearity, altitudeVar) {
+
+    const roads = RoadGen.optMapGen(size, linearity, altitudeVar);
+    const map = simplifyShapeArray(mapToArray(roads));
+
     return map;
   }
 
   // generate map of given size and convert to JSON
-  function generateJSONMap(size) {
-    return JSON.stringify(getMap(size));
+  function generateJSONMap(size, linearity, altitudeVar) {
+    return JSON.stringify(getMap(size, linearity, altitudeVar));
   }
 
   // Writing to File
   const fs = require('fs');
 
   // Generate a nr of maps and write them into separate files
-  function writeJSONMapsToFiles(count, size) {
+  function writeJSONMapsToFiles(count, size, linearity, altitudeVar) {
     console.log(`Generating ${count} map(s) of size ${size}.`);
     for (let i = 0; i < count; ++i) {
-      const map = generateJSONMap(size);
+      const map = generateJSONMap(size, linearity, altitudeVar);
       fs.writeFileSync(`out/test${i}.json`, map, (err) => {
         // throws an error, you could also catch it here
         if (err) throw err;
