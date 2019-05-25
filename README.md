@@ -13,8 +13,16 @@ Use *3dGeomBrowser.js*.
   
   
 Two functions are exported:  
-1. `MapGen.getMap(roadLength, roadLinearity, altitudeVariation)` returning a procedurally generated road as a `shapeArray[verticesArray[xyzArray[]]]`
-2. `MapGen.generateJSONMap(roadLength, roadLinearity, altitudeVariation)` returning data above in JSON format 
+1. 
+``` javascript
+MapGen.getMap(roadLength, roadLinearity, altitudeVariation)
+```
+returning a procedurally generated road as a `shapeArray[verticesArray[xyzArray[]]]`.
+2. 
+``` javascript
+MapGen.generateJSONMap(roadLength, roadLinearity, altitudeVariation)
+``` 
+returning same data as above but in JSON format.
 
 
 Node usage
@@ -22,4 +30,7 @@ Node usage
 Use *3dGeomNode.js*.  
   
 Same functions as above are exported, plus  
-`MapGen.writeJSONMapsToFiles(noOfMaps, roadLength, roadLinearity, altitudeVariation)` which generates a set amount of random maps of given length
+``` javascript
+MapGen.writeJSONMapsToFiles(noOfMaps, roadLength, roadLinearity, altitudeVariation)
+``` 
+which generates a set amount of random maps of given length.
