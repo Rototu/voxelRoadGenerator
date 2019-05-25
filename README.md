@@ -14,13 +14,13 @@ Use *3dGeomBrowser.js*.
   
 Two functions are exported:  
 
-1. <br/>
+1.  MapGen.getMap:  
     ``` javascript
     MapGen.getMap(roadLength, roadLinearity, altitudeVariation)
     ```
     returning a procedurally generated road as a `shapeArray[verticesArray[xyzArray[]]]`.
 
-2.  <br/>
+2.  MapGen.generateJSONMap:  
     ``` javascript
     MapGen.generateJSONMap(roadLength, roadLinearity, altitudeVariation)
     ``` 
