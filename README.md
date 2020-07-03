@@ -1,6 +1,6 @@
 voxelRoadGenerator  
 ==================
-A procedural road generator using voxels
+A procedural road generator using voxels.
 
 Demo
 ----
